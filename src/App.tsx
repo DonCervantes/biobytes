@@ -8,6 +8,7 @@ import type { Rol } from '@/lib/tipos'
 import { Alta } from '@/pages/Alta'
 import { Bitacora } from '@/pages/Bitacora'
 import { Expediente } from '@/pages/Expediente'
+import { Landing } from '@/pages/Landing'
 import { Login } from '@/pages/Login'
 import { Padron } from '@/pages/Padron'
 
@@ -19,11 +20,6 @@ function Protegida({ roles, children }: { roles?: Rol[]; children: ReactNode }) 
     return <p role="alert" className="p-8 text-center text-lg font-semibold">No tienes acceso a esta sección.</p>
   }
   return children
-}
-
-function Inicio() {
-  const { rol } = useAuth()
-  return <Navigate to={rol === 'auditor' ? '/bitacora' : '/padron'} replace />
 }
 
 export default function App() {
@@ -38,9 +34,9 @@ export default function App() {
     <AuthProvider>
       <BrowserRouter>
         <Routes>
+          <Route path="/" element={<Landing />} />
           <Route path="/login" element={<Login />} />
           <Route element={<Protegida><Layout /></Protegida>}>
-            <Route index element={<Inicio />} />
             <Route path="/padron" element={<Protegida roles={['captura', 'medico', 'coordinacion', 'admin']}><Padron /></Protegida>} />
             <Route path="/alta" element={<Protegida roles={['captura', 'coordinacion']}><Alta /></Protegida>} />
             <Route path="/expediente/:id" element={<Protegida roles={['captura', 'medico', 'coordinacion', 'admin']}><Expediente /></Protegida>} />

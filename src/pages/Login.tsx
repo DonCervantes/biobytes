@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react'
-import { Navigate } from 'react-router-dom'
+import { Link, Navigate } from 'react-router-dom'
 import { useAuth } from '@/auth/AuthContext'
 import { Alerta, Boton, Campo, Entrada, Tarjeta } from '@/components/ui'
 import { supabase } from '@/lib/supabase'
@@ -22,7 +22,7 @@ export function Login() {
   }
 
   return (
-    <main className="flex min-h-dvh items-center justify-center p-4">
+    <main className="flex min-h-dvh flex-col items-center justify-center gap-4 p-4">
       <Tarjeta className="w-full max-w-md">
         <div className="mb-6 flex items-center gap-3">
           <img src="/favicon.svg" alt="" className="size-12" />
@@ -50,6 +50,7 @@ export function Login() {
           </form>
         )}
       </Tarjeta>
+      <Link to="/" className="text-sm font-semibold text-primario hover:underline">← Volver al inicio</Link>
     </main>
   )
 }
