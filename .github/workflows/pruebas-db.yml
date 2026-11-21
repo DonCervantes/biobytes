@@ -1,0 +1,47 @@
+# BB-16 · Corre las pruebas de la base (supabase/tests/*.test.sql) contra Supabase.
+# Las pruebas se deshacen solas: no dejan datos en la base.
+# Requiere el secreto del repo SUPABASE_DB_URL (Supabase → Connect → cadena de conexión «Session pooler»).
+# Si el secreto no existe, el flujo se salta sin fallar.
+name: Pruebas de la base
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['supabase/**']
+
+jobs:
+  pruebas-db:
+    runs-on: ubuntu-latest
+    env:
+      SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: ¿Hay conexión configurada?
+        id: conf
+        run: |
+          if [ -z "$SUPABASE_DB_URL" ]; then
+            echo "Falta el secreto SUPABASE_DB_URL: se omiten las pruebas."
+            echo "ok=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "ok=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Instalar psql
+        if: steps.conf.outputs.ok == 'true'
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq postgresql-client
+
+      - name: Correr pruebas (TAP)
+        if: steps.conf.outputs.ok == 'true'
+        run: |
+          fallo=0
+          for f in supabase/tests/*.test.sql; do
+            echo "::group::$f"
+            salida=$(psql "$SUPABASE_DB_URL" -qAt -v ON_ERROR_STOP=1 -f "$f") || fallo=1
+            echo "$salida"
+            echo "::endgroup::"
+            echo "$salida" | grep -q '^not ok' && fallo=1
+            echo "$salida" | grep -q '^1\.\.[1-9]' || fallo=1
+          done
+          exit $fallo

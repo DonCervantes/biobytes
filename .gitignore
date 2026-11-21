@@ -31,3 +31,6 @@ dist-ssr
 .vercel
 
 .vercel
+
+# Archivos temporales de la CLI de Supabase
+supabase/.temp/

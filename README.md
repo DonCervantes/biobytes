@@ -55,6 +55,17 @@ Producto, roles, pitch y modelo de negocio: [`docs/BioBytes.md`](docs/BioBytes.m
 
 Las contraseñas de los usuarios de prueba del proyecto de demo están en `supabase/usuarios-demo.local.txt` (ignorado por git).
 
+## Pruebas automáticas de la base (BB-16)
+
+`supabase/tests/bb16_base.test.sql` tiene **48 pruebas** con salida TAP: T1–T5 del backlog (coincidencias, alta sin decisión, vincular con teléfono nuevo, idempotencia, conflicto de versión), validaciones (CURP duplicada o inválida, fechas futuras en hora de CDMX, teléfono, nombre), padrón, permisos de cada rol (Captura, Médico, Auditoría, sin sesión), impresión y bitácora encadenada (incluida la detección de una fila alterada).
+
+**No dejan rastro**: crean sus propias usuarias de prueba y todo se deshace al terminar. Solo la secuencia de folios no es transaccional; se restaura al final, así que no conviene correrlas durante una jornada real.
+
+Cómo correrlas:
+- **SQL Editor de Supabase**: pega el archivo completo y ejecútalo. Cada fila debe decir `ok N - …`.
+- **Terminal**: `psql "$SUPABASE_DB_URL" -qAt -f supabase/tests/bb16_base.test.sql`
+- **GitHub Actions**: el flujo `Pruebas de la base` corre en cada push que toque `supabase/` (o a mano desde la pestaña *Actions*). Necesita el secreto del repo `SUPABASE_DB_URL`; sin él, se salta.
+
 ## Valkey (opcional)
 
 La Edge Function `supabase/functions/sync` usa Valkey si encuentra estos secretos (Supabase → Edge Functions → Secrets, o `supabase secrets set`):
