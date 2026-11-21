@@ -1,6 +1,6 @@
 import { useLiveQuery } from 'dexie-react-hooks'
 import { CloudOff, LogOut, Wifi } from 'lucide-react'
-import { useCallback, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { Link, NavLink, Outlet } from 'react-router-dom'
 import { useAuth } from '@/auth/AuthContext'
 import { db } from '@/lib/cola'
@@ -17,6 +17,11 @@ export function Layout() {
   const pendientes = useLiveQuery(() => db.cola.where('estado').equals('pendiente').count(), [], 0)
   const porDecidir = useLiveQuery(() => db.cola.where('estado').anyOf('coincidencias', 'conflicto', 'error').count(), [], 0)
   const cerrarPanel = useCallback(() => setPanel(false), [])
+  // BB-11: si el navegador no garantiza el almacenamiento, podría borrar la cola al llenarse.
+  const [persistente, setPersistente] = useState(true)
+  useEffect(() => {
+    void navigator.storage?.persisted?.().then((p) => setPersistente(p)).catch(() => undefined)
+  }, [pendientes])
 
   const salir = async () => {
     const sinEnviar = pendientes + porDecidir
@@ -31,7 +36,7 @@ export function Layout() {
 
   return (
     <div className="min-h-dvh">
-      <header className="sticky top-0 z-30 border-b border-borde bg-white/95 backdrop-blur">
+      <header className="print:hidden sticky top-0 z-30 border-b border-borde bg-white/95 backdrop-blur">
         <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-x-4 gap-y-2 px-4 py-2">
           <Link to="/padron" aria-label="BioBytes, ir al padrón"><Logo /></Link>
           <nav className="flex gap-1" aria-label="Secciones">
@@ -62,8 +67,13 @@ export function Layout() {
             <Boton variante="fantasma" onClick={salir}><LogOut size={16} aria-hidden /> Cerrar sesión</Boton>
           </div>
         </div>
+        {!persistente && pendientes + porDecidir > 0 && (
+          <p role="status" className="border-t border-ambar/30 bg-ambar-claro px-4 py-2 text-center text-sm font-medium text-ambar">
+            El navegador podría borrar capturas si se llena; envíalas pronto.
+          </p>
+        )}
       </header>
-      <main className="mx-auto max-w-6xl px-4 py-6">
+      <main className="mx-auto max-w-6xl px-4 py-6 print:max-w-none print:p-0">
         <Outlet />
       </main>
       <PanelDecisiones abierto={panel} onCerrar={cerrarPanel} />

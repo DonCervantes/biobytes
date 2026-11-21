@@ -1,4 +1,4 @@
-import { Search, UserPlus } from 'lucide-react'
+import { Printer, Search, UserPlus } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '@/auth/AuthContext'
@@ -67,9 +67,14 @@ export function Padron() {
       <div className="flex flex-wrap items-end justify-between gap-3">
         <h1 className="text-3xl font-extrabold">Padrón</h1>
         {puedeRegistrar && (
-          <Link to="/alta" className={estiloBoton({ variante: 'primario' })}>
-            <UserPlus size={18} aria-hidden /> Registrar paciente
-          </Link>
+          <div className="flex flex-wrap gap-2">
+            <Link to="/formato" className={estiloBoton({ variante: 'secundario' })}>
+              <Printer size={18} aria-hidden /> Imprimir formato en blanco
+            </Link>
+            <Link to="/alta" className={estiloBoton({ variante: 'primario' })}>
+              <UserPlus size={18} aria-hidden /> Registrar paciente
+            </Link>
+          </div>
         )}
       </div>
 

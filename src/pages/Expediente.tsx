@@ -1,5 +1,6 @@
 import { useLiveQuery } from 'dexie-react-hooks'
-import { CalendarPlus, ClipboardList, CloudOff, Pencil, Phone, Stethoscope } from 'lucide-react'
+import { CalendarPlus, ClipboardList, CloudOff, Pencil, Phone, Printer, Stethoscope, X } from 'lucide-react'
+import { createPortal } from 'react-dom'
 import { useCallback, useEffect, useState, type FormEvent } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { toast } from 'sonner'
@@ -9,10 +10,13 @@ import { db, descartar, enviarCaptura, pacienteLocal, useCapturas } from '@/lib/
 import { useConexion } from '@/lib/conexion'
 import { esErrorDeRed, supabase } from '@/lib/supabase'
 import type { CapturaP, Expediente as TExpediente, RespuestaCaptura } from '@/lib/tipos'
-import { CAMPOS, enmascararTel, etiquetaServicio, fmtFecha, fmtFechaHora, hoyCDMX, SERVICIOS, soloDigitos } from '@/lib/utils'
+import { CAMPOS, enmascararTel, ROLES, etiquetaServicio, fmtFecha, fmtFechaHora, hoyCDMX, SERVICIOS, soloDigitos } from '@/lib/utils'
+import { ahoraCDMX, curpImpresa, imprimir } from '@/lib/impresion'
 import { validarCorreo, validarTelefono } from '@/lib/validacion'
 
 type Modo = null | 'contacto' | 'visita'
+/** Datos del comprobante de visita (sin datos clínicos). */
+interface DatosComprobante { fecha: string; sede: string; servicio: string; pendiente: boolean }
 
 export function Expediente() {
   const { id = '' } = useParams()
@@ -22,6 +26,7 @@ export function Expediente() {
   const [local, setLocal] = useState(false)
   const [error, setError] = useState('')
   const [modo, setModo] = useState<Modo>(null)
+  const [comprobante, setComprobante] = useState<DatosComprobante | null>(null)
   const pendientes = useCapturas(() => db.cola.where('paciente_id').equals(id).toArray(), [id])
     .filter((c) => c.p.tipo !== 'alta')
 
@@ -57,7 +62,8 @@ export function Expediente() {
   const esMedico = rol === 'medico'
   const nombre = [p.nombre, p.apellido_paterno, p.apellido_materno].filter(Boolean).join(' ')
 
-  const despues = async (r: RespuestaCaptura | undefined, cid: string) => {
+  const despues = async (r: RespuestaCaptura | undefined, cid: string, comp?: DatosComprobante) => {
+    if (comp && (!r || r.estado === 'ok')) setComprobante({ ...comp, pendiente: !r })
     if (!r) {
       toast('Guardada en este dispositivo. Se enviará sola al volver la conexión.')
       setModo(null)
@@ -81,11 +87,12 @@ export function Expediente() {
 
   return (
     <div className="flex flex-col gap-5">
-      <Link to="/padron" className="text-sm font-semibold text-primario hover:underline">← Padrón</Link>
+      <Link to="/padron" className="text-sm font-semibold text-primario hover:underline print:hidden">← Padrón</Link>
+      <EncabezadoImpreso rol={rol ? ROLES[rol] : ''} />
       {local && (
-        <Alerta tono="ambar">
+        <div className="print:hidden"><Alerta tono="ambar">
           Sin internet: mostramos los datos guardados en este dispositivo. La cronología completa aparecerá al volver la conexión.
-        </Alerta>
+        </Alerta></div>
       )}
 
       <Tarjeta className="flex flex-col gap-4">
@@ -94,20 +101,25 @@ export function Expediente() {
             <h1 className="text-3xl font-extrabold">{nombre}</h1>
             <Folio className="text-2xl">{p.folio}</Folio>
           </div>
+          <div className="flex flex-wrap gap-2 print:hidden">
+            <Boton variante="secundario" onClick={() => void imprimir('expediente', p.id, p.folio)}>
+              <Printer size={18} aria-hidden /> Imprimir / PDF
+            </Boton>
           {esCaptura && (
-            <div className="flex flex-wrap gap-2">
+            <>
               <Boton variante="secundario" onClick={() => setModo(modo === 'contacto' ? null : 'contacto')}>
                 <Phone size={18} aria-hidden /> Actualizar contacto
               </Boton>
               <Boton onClick={() => setModo(modo === 'visita' ? null : 'visita')}>
                 <CalendarPlus size={18} aria-hidden /> Registrar visita de hoy
               </Boton>
-            </div>
+            </>
           )}
+          </div>
         </div>
         <dl className="grid grid-cols-2 gap-x-6 gap-y-3 text-sm sm:grid-cols-3 lg:grid-cols-6">
           <Dato t="Nacimiento" v={fmtFecha(p.fecha_nacimiento)} />
-          <Dato t="CURP" v={p.curp ?? '—'} mono />
+          <Dato t="CURP" v={p.curp ?? '—'} impreso={curpImpresa(p.curp)} mono />
           <Dato t="Teléfono" v={local ? enmascararTel(p.telefono) : (p.telefono ?? '—')} mono />
           <Dato t="Correo" v={p.correo ?? '—'} />
           <Dato t="Municipio" v={p.municipio ?? '—'} />
@@ -117,6 +129,20 @@ export function Expediente() {
 
       {modo === 'contacto' && <FormContacto exp={exp} onCancelar={() => setModo(null)} onEnviar={despues} />}
       {modo === 'visita' && <FormVisita exp={exp} onCancelar={() => setModo(null)} onEnviar={despues} />}
+      {comprobante && (
+        <Tarjeta className="flex flex-wrap items-center gap-3 border-jade bg-jade-claro print:hidden">
+          <p className="font-semibold text-jade">
+            Visita registrada{comprobante.pendiente ? ' (pendiente de enviar)' : ''}: {etiquetaServicio(comprobante.servicio)} · {fmtFecha(comprobante.fecha)}
+          </p>
+          <div className="ml-auto flex gap-2">
+            <Boton variante="jade" onClick={() => void imprimir('comprobante', p.id, p.folio)}>
+              <Printer size={18} aria-hidden /> Imprimir comprobante
+            </Boton>
+            <Boton variante="fantasma" aria-label="Cerrar aviso" onClick={() => setComprobante(null)}><X size={18} aria-hidden /></Boton>
+          </div>
+        </Tarjeta>
+      )}
+      {comprobante && createPortal(<Comprobante nombre={nombre} folio={p.folio} datos={comprobante} />, document.body)}
 
       {esMedico && <Antecedentes pacienteId={p.id} inicial={exp.antecedentes} uid={session?.user.id} />}
 
@@ -124,7 +150,7 @@ export function Expediente() {
         <h2 className="flex items-center gap-2 text-xl font-bold"><ClipboardList size={20} aria-hidden /> Cronología</h2>
         <ol className="flex flex-col gap-3">
           {pendientes.map((c) => (
-            <li key={c.client_id} className="flex flex-wrap items-center gap-2 rounded-[10px] border border-dashed border-ambar bg-ambar-claro/50 p-3 text-sm">
+            <li key={c.client_id} className="print:hidden flex flex-wrap items-center gap-2 rounded-[10px] border border-dashed border-ambar bg-ambar-claro/50 p-3 text-sm">
               <Insignia tono="ambar"><CloudOff size={12} aria-hidden /> {c.estado === 'pendiente' ? 'Pendiente de enviar' : 'Por decidir'}</Insignia>
               <span className="font-medium">{descripcionPendiente(c.p)}</span>
             </li>
@@ -162,11 +188,55 @@ function descripcionPendiente(p: CapturaP) {
   return 'Captura'
 }
 
-function Dato({ t, v, mono }: { t: string; v: string; mono?: boolean }) {
-  return <div><dt className="text-gris">{t}</dt><dd className={mono ? 'font-mono font-medium' : 'font-medium'}>{v}</dd></div>
+function Dato({ t, v, mono, impreso }: { t: string; v: string; mono?: boolean; impreso?: string }) {
+  return (
+    <div>
+      <dt className="text-gris">{t}</dt>
+      <dd className={mono ? 'font-mono font-medium' : 'font-medium'}>
+        {impreso === undefined ? v : <><span className="print:hidden">{v}</span><span className="hidden print:inline">{impreso}</span></>}
+      </dd>
+    </div>
+  )
 }
 
-type OnEnviar = (r: RespuestaCaptura | undefined, cid: string) => Promise<void>
+/** Encabezado que solo aparece en papel. */
+function EncabezadoImpreso({ rol }: { rol: string }) {
+  return (
+    <div className="hidden border-b-2 border-tinta pb-2 print:block">
+      <p className="text-lg font-bold">BioBytes · EIRA Movimiento Rosa</p>
+      <p className="text-xs">Impreso el {ahoraCDMX()} (hora de la Ciudad de México) · Perfil: {rol}</p>
+    </div>
+  )
+}
+
+/** Comprobante de visita para la paciente: media carta, sin datos clínicos. Solo se ve al imprimir. */
+function Comprobante({ nombre, folio, datos }: { nombre: string; folio: string; datos: DatosComprobante }) {
+  return (
+    <div id="comprobante-impresion" className="hidden text-tinta">
+      <div className="flex items-center gap-2 border-b-2 border-tinta pb-2">
+        <img src="/icon.svg" alt="" className="h-8 w-auto" />
+        <div>
+          <p className="text-base font-bold">BioBytes · EIRA Movimiento Rosa</p>
+          <p className="text-xs">Comprobante de visita</p>
+        </div>
+      </div>
+      <p className="mt-5 text-xs uppercase">Folio de la paciente</p>
+      <p className="font-mono text-3xl font-semibold">{folio}</p>
+      <p className="mt-4 text-xs uppercase">Nombre</p>
+      <p className="text-lg font-semibold">{nombre}</p>
+      <dl className="mt-4 grid grid-cols-1 gap-2 text-sm">
+        <div><dt className="text-xs uppercase">Fecha</dt><dd className="font-semibold">{fmtFecha(datos.fecha)}</dd></div>
+        <div><dt className="text-xs uppercase">Sede</dt><dd className="font-semibold">{datos.sede}</dd></div>
+        <div><dt className="text-xs uppercase">Servicio</dt><dd className="font-semibold">{etiquetaServicio(datos.servicio)}</dd></div>
+      </dl>
+      <p className="mt-6 rounded border border-tinta p-3 text-sm">
+        Conserva este comprobante y preséntalo en tu próxima jornada: con tu folio te encontramos más rápido.
+      </p>
+    </div>
+  )
+}
+
+type OnEnviar = (r: RespuestaCaptura | undefined, cid: string, comprobante?: DatosComprobante) => Promise<void>
 
 function FormContacto({ exp, onCancelar, onEnviar }: { exp: TExpediente; onCancelar: () => void; onEnviar: OnEnviar }) {
   const p = exp.paciente
@@ -197,7 +267,7 @@ function FormContacto({ exp, onCancelar, onEnviar }: { exp: TExpediente; onCance
   }
 
   return (
-    <Tarjeta>
+    <Tarjeta className="print:hidden">
       <form onSubmit={enviar} noValidate className="flex flex-col gap-4">
         <h2 className="text-xl font-bold">Actualizar contacto</h2>
         {errores._ && <Alerta>{errores._}</Alerta>}
@@ -244,12 +314,13 @@ function FormVisita({ exp, onCancelar, onEnviar }: { exp: TExpediente; onCancela
       visita: { fecha: hoyCDMX(), sede_id: Number(sede), servicio },
       etiqueta: `Visita: ${exp.paciente.folio}`,
     }
+    const comp = { fecha: hoyCDMX(), sede: sedes.find((s) => s.id === Number(sede))?.nombre ?? '', servicio, pendiente: false }
     setOcupado(true)
-    try { await onEnviar(await enviarCaptura(cap), cap.client_id) } finally { setOcupado(false) }
+    try { await onEnviar(await enviarCaptura(cap), cap.client_id, comp) } finally { setOcupado(false) }
   }
 
   return (
-    <Tarjeta>
+    <Tarjeta className="print:hidden">
       <form onSubmit={enviar} noValidate className="flex flex-col gap-4">
         <h2 className="text-xl font-bold">Registrar visita de hoy · {fmtFecha(hoyCDMX())}</h2>
         <div className="grid gap-4 sm:grid-cols-2">
@@ -295,7 +366,7 @@ function Antecedentes({ pacienteId, inicial, uid }: { pacienteId: string; inicia
     <Tarjeta className="flex flex-col gap-3 border-l-4 border-l-jade">
       <div className="flex items-center justify-between">
         <h2 className="text-xl font-bold">Antecedentes</h2>
-        {!editando && <Boton variante="secundario" onClick={() => setEditando(true)}><Pencil size={16} aria-hidden /> Editar</Boton>}
+        {!editando && <Boton variante="secundario" className="print:hidden" onClick={() => setEditando(true)}><Pencil size={16} aria-hidden /> Editar</Boton>}
       </div>
       {editando ? (
         <>
@@ -309,7 +380,7 @@ function Antecedentes({ pacienteId, inicial, uid }: { pacienteId: string; inicia
       ) : (
         <p className="whitespace-pre-wrap">{texto || <span className="text-gris">Sin antecedentes registrados.</span>}</p>
       )}
-      <p className="text-xs text-gris">Solo el personal médico ve esta sección.</p>
+      <p className="text-xs text-gris print:hidden">Solo el personal médico ve esta sección.</p>
     </Tarjeta>
   )
 }
@@ -332,8 +403,9 @@ function NotaVisita({ visitaId, inicial, uid }: { visitaId: string; inicial: str
   return (
     <div className="mt-3 flex flex-col gap-2">
       <label htmlFor={`nota-${visitaId}`} className="text-sm font-semibold">Observaciones clínicas</label>
-      <AreaTexto id={`nota-${visitaId}`} className="min-h-16" value={texto} onChange={(e) => setTexto(e.target.value)} />
-      {cambiado && <Boton variante="jade" className="self-start" disabled={ocupado} onClick={guardar}>Guardar observaciones</Boton>}
+      <AreaTexto id={`nota-${visitaId}`} className="min-h-16 print:hidden" value={texto} onChange={(e) => setTexto(e.target.value)} />
+      <p className="hidden whitespace-pre-wrap text-sm print:block">{(inicial ?? '') || 'Sin observaciones.'}</p>
+      {cambiado && <Boton variante="jade" className="self-start print:hidden" disabled={ocupado} onClick={guardar}>Guardar observaciones</Boton>}
     </div>
   )
 }

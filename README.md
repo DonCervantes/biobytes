@@ -29,6 +29,8 @@ Producto, roles, pitch y modelo de negocio: [`docs/BioBytes.md`](docs/BioBytes.m
 | Roles Captura y Personal médico con RLS y revisión de rol en el servidor | ✅ Implementado |
 | Bitácora encadenada con HMAC (secreto en Vault) + página de auditoría con «Verificar integridad» | ✅ Implementado |
 | Idempotencia por `client_id` | ✅ En Postgres (`captura_sync`) |
+| Imprimir / guardar como PDF: expediente (carta, pie «CONFIDENCIAL» con folio y página, CURP parcial, lo clínico solo para el rol médico) y comprobante de visita en media carta sin datos clínicos; cada impresión queda en la bitácora | ✅ Implementado (BB-12b) |
+| Contingencia sin conexión: renovación de sesión antes de enviar, aviso si el navegador puede borrar capturas y formato en blanco imprimible en `/formato` | ✅ Implementado (BB-11) |
 | Valkey (idempotencia rápida y límite de intentos) | 🟡 Diseñado (BB-13); la idempotencia ya vive en Postgres |
 | Cifrado de la cola y del padrón locales (AES-GCM 256, llave no exportable que se borra al cerrar sesión) | ✅ Implementado (BB-10) |
 | Coordinación (fusionar/separar), Admin UI | 🟡 Diseñado; usuarios desde el panel de Supabase |
@@ -41,6 +43,7 @@ Producto, roles, pitch y modelo de negocio: [`docs/BioBytes.md`](docs/BioBytes.m
    - Crea el secreto de la bitácora: `select vault.create_secret(encode(extensions.gen_random_bytes(32),'hex'), 'hmac_secret');`
    - En **Auth → Users** crea `captura@biobytes.demo`, `medico@biobytes.demo` y `auditor@biobytes.demo` (Auto confirm) y corre `supabase/seed.sql`.
    - En **Auth → Providers → Email** desactiva *Allow new users to sign up*.
+   - El secreto de Vault va **antes** de correr las migraciones que escriben en la bitácora.
    - Pruebas: `supabase/pruebas-bb03.sql` (T1–T5). Reinicio para la demo: `supabase/reinicio-demo.sql`.
 2. **Front.**
    ```bash

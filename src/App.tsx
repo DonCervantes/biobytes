@@ -8,6 +8,7 @@ import type { Rol } from '@/lib/tipos'
 import { Alta } from '@/pages/Alta'
 import { Bitacora } from '@/pages/Bitacora'
 import { Expediente } from '@/pages/Expediente'
+import { Formato } from '@/pages/Formato'
 import { Landing } from '@/pages/Landing'
 import { Login } from '@/pages/Login'
 import { Padron } from '@/pages/Padron'
@@ -36,6 +37,7 @@ export default function App() {
         <Routes>
           <Route path="/" element={<Landing />} />
           <Route path="/login" element={<Login />} />
+          <Route path="/formato" element={<Formato />} />
           <Route element={<Protegida><Layout /></Protegida>}>
             <Route path="/padron" element={<Protegida roles={['captura', 'medico', 'coordinacion', 'admin']}><Padron /></Protegida>} />
             <Route path="/alta" element={<Protegida roles={['captura', 'coordinacion']}><Alta /></Protegida>} />

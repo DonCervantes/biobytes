@@ -186,6 +186,9 @@ export function sincronizar(): Promise<Map<string, RespuestaCaptura>> {
 async function correr(): Promise<Map<string, RespuestaCaptura>> {
   const resultados = new Map<string, RespuestaCaptura>()
   const pendientes = await abrirCapturas(await db.cola.where('estado').equals('pendiente').sortBy('creada'))
+  // BB-11: tras horas sin red el token ya venció; getSession() lo renueva con el refresh token
+  // antes de enviar, así no hace falta volver a iniciar sesión.
+  if (pendientes.length > 0) await supabase.auth.getSession().catch(() => undefined)
   for (const c of pendientes) {
     const { etiqueta: _e, ...p } = c.p // descifrada justo antes de enviar
     const { data, error, status } = await supabase.rpc('registrar_captura', { p })

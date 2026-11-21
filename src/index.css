@@ -46,3 +46,15 @@ h1, h2, h3 {
 input, select, textarea, button {
   font: inherit;
 }
+
+/* ===== Impresión (BB-12b) ===== */
+@media print {
+  html { font-size: 11pt; }
+  body { background: #fff !important; color: #000; }
+  [data-sonner-toaster] { display: none !important; }
+  section { box-shadow: none !important; break-inside: avoid; }
+  /* Comprobante: solo se imprime él; el expediente: todo menos él. */
+  body[data-imprimir="comprobante"] #root { display: none !important; }
+  body[data-imprimir="comprobante"] #comprobante-impresion { display: block !important; }
+  body:not([data-imprimir="comprobante"]) #comprobante-impresion { display: none !important; }
+}
