@@ -69,11 +69,11 @@ export function Landing() {
           <div aria-hidden className="pointer-events-none absolute -top-24 -right-32 size-[28rem] rounded-full bg-niebla blur-3xl" />
           <div aria-hidden className="pointer-events-none absolute top-64 -left-40 size-80 rounded-full bg-jade-claro blur-3xl" />
           <div className="relative mx-auto grid max-w-6xl items-center gap-12 px-4 pt-14 pb-20 lg:grid-cols-[1.1fr_1fr] lg:pt-20">
-            <div>
+            <div className="min-w-0">
               <p className="mb-4 inline-flex items-center gap-2 rounded-full bg-white px-3 py-1 text-sm font-semibold text-primario shadow-sm">
                 <HeartHandshake size={16} aria-hidden /> Para brigadas de salud en México
               </p>
-              <h1 className="text-5xl leading-[1.05] font-extrabold tracking-tight text-tinta sm:text-6xl">
+              <h1 className="text-4xl leading-[1.05] font-extrabold tracking-tight break-words text-tinta min-[400px]:text-5xl sm:text-6xl">
                 Cada mujer, <span className="text-primario">un solo expediente.</span>
               </h1>
               <p className="mt-5 max-w-xl text-lg text-gris">
