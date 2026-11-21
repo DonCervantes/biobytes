@@ -1,0 +1,5 @@
+# Nunca subir credenciales locales a Vercel
+*.local.*
+.env
+.env.*
+!.env.example
