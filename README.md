@@ -31,7 +31,8 @@ Producto, roles, pitch y modelo de negocio: [`docs/BioBytes.md`](docs/BioBytes.m
 | Idempotencia por `client_id` | ✅ En Postgres (`captura_sync`) |
 | Imprimir / guardar como PDF: expediente (carta, pie «CONFIDENCIAL» con folio y página, CURP parcial, lo clínico solo para el rol médico) y comprobante de visita en media carta sin datos clínicos; cada impresión queda en la bitácora | ✅ Implementado (BB-12b) |
 | Contingencia sin conexión: renovación de sesión antes de enviar, aviso si el navegador puede borrar capturas y formato en blanco imprimible en `/formato` | ✅ Implementado (BB-11) |
-| Valkey (idempotencia rápida y límite de intentos) | 🟡 Diseñado (BB-13); la idempotencia ya vive en Postgres |
+| Edge Function `sync`: la cola se envía en lotes de hasta 20 (`VITE_SYNC_MODE=edge`) | ✅ Implementado (BB-13) |
+| Valkey: idempotencia rápida (`idem:*`, 24 h) y límite de 60 capturas por minuto por usuaria (`rl:*`) | 🟡 Código listo; se activa al configurar los secretos `VALKEY_*`. Sin ellos la función trabaja en modo degradado (`valkey: false`) y la idempotencia sigue en Postgres |
 | Cifrado de la cola y del padrón locales (AES-GCM 256, llave no exportable que se borra al cerrar sesión) | ✅ Implementado (BB-10) |
 | Coordinación (fusionar/separar), Admin UI | 🟡 Diseñado; usuarios desde el panel de Supabase |
 | Portal de paciente + SMS | 🔵 Diseñado |
@@ -53,6 +54,20 @@ Producto, roles, pitch y modelo de negocio: [`docs/BioBytes.md`](docs/BioBytes.m
    ```
 
 Las contraseñas de los usuarios de prueba del proyecto de demo están en `supabase/usuarios-demo.local.txt` (ignorado por git).
+
+## Valkey (opcional)
+
+La Edge Function `supabase/functions/sync` usa Valkey si encuentra estos secretos (Supabase → Edge Functions → Secrets, o `supabase secrets set`):
+
+| Secreto | Ejemplo |
+|---|---|
+| `VALKEY_HOST` | `mi-valkey.aivencloud.com` |
+| `VALKEY_PORT` | `12345` |
+| `VALKEY_USER` | `default` (si el proveedor lo pide) |
+| `VALKEY_PASS` | contraseña del servicio |
+| `VALKEY_TLS` | `true` (por omisión) |
+
+El endpoint debe ser público con TLS: ElastiCache solo se alcanza desde una VPC. Si Valkey no conecta en 3 s, la función sigue sin él y reintenta cada minuto.
 
 ## Deploy en Vercel
 

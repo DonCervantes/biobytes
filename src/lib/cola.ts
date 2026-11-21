@@ -189,7 +189,8 @@ async function correr(): Promise<Map<string, RespuestaCaptura>> {
   // BB-11: tras horas sin red el token ya venció; getSession() lo renueva con el refresh token
   // antes de enviar, así no hace falta volver a iniciar sesión.
   if (pendientes.length > 0) await supabase.auth.getSession().catch(() => undefined)
-  for (const c of pendientes) {
+  if (MODO_EDGE) await correrPorLotes(pendientes, resultados)
+  else for (const c of pendientes) {
     const { etiqueta: _e, ...p } = c.p // descifrada justo antes de enviar
     const { data, error, status } = await supabase.rpc('registrar_captura', { p })
     if (error) {
@@ -214,6 +215,41 @@ async function correr(): Promise<Map<string, RespuestaCaptura>> {
     window.dispatchEvent(new CustomEvent('biobytes:sincronizado'))
   }
   return resultados
+}
+
+// BB-13 · Con VITE_SYNC_MODE=edge la cola se manda en lotes a la Edge Function `sync`
+// (idempotencia rápida y límite de intentos en Valkey). Sin la variable, RPC directo, una por una.
+const MODO_EDGE = import.meta.env.VITE_SYNC_MODE === 'edge'
+const TAM_LOTE = 20
+
+async function aplicarResultado(c: Captura, r: RespuestaCaptura) {
+  if (r.estado === 'ok') await db.cola.delete(c.client_id)
+  else await guardar({ ...c, estado: r.estado, respuesta: r })
+}
+
+async function correrPorLotes(pendientes: Captura[], resultados: Map<string, RespuestaCaptura>) {
+  for (let i = 0; i < pendientes.length; i += TAM_LOTE) {
+    const lote = pendientes.slice(i, i + TAM_LOTE)
+    const capturas = lote.map(({ p: { etiqueta: _e, ...p } }) => p) // descifradas justo antes de enviar
+    const { data, error } = await supabase.functions.invoke('sync', { body: { capturas } })
+    if (error) {
+      const status = (error as { context?: Response }).context?.status
+      if (status === 401) {
+        avisar('Tu sesión expiró. Inicia sesión de nuevo; la captura sigue guardada en este dispositivo.')
+      } else if (status === 429) {
+        avisar('Demasiadas capturas por minuto. Se enviarán solas en un momento.')
+      }
+      return // sin red, sesión vencida o límite: se detiene, nada se pierde
+    }
+    const porId = new Map<string, RespuestaCaptura>(
+      ((data as { resultados: RespuestaCaptura[] }).resultados ?? []).map((r) => [r.client_id, r]))
+    for (const c of lote) {
+      const r = porId.get(c.client_id)
+      if (!r) continue // sin respuesta para esta captura: se queda pendiente
+      await aplicarResultado(c, r)
+      resultados.set(c.client_id, r)
+    }
+  }
 }
 
 /** Reenvía tras una decisión humana (coincidencias o conflicto) con el MISMO client_id. */
