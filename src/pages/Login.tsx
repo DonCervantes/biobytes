@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from 'react'
 import { Link, Navigate } from 'react-router-dom'
 import { useAuth } from '@/auth/AuthContext'
+import { Logo } from '@/components/Logo'
 import { Alerta, Boton, Campo, Entrada, Tarjeta } from '@/components/ui'
 import { supabase } from '@/lib/supabase'
 
@@ -24,12 +25,9 @@ export function Login() {
   return (
     <main className="flex min-h-dvh flex-col items-center justify-center gap-4 p-4">
       <Tarjeta className="w-full max-w-md">
-        <div className="mb-6 flex items-center gap-3">
-          <img src="/favicon.svg" alt="" className="size-12" />
-          <div>
-            <h1 className="text-3xl font-extrabold text-primario">BioBytes</h1>
-            <p className="text-sm text-gris">Cada mujer, un solo expediente.</p>
-          </div>
+        <div className="mb-6">
+          <h1><Logo tam="grande" /></h1>
+          <p className="mt-2 text-sm text-gris">Cada mujer, un solo expediente.</p>
         </div>
         {session && sinPerfil ? (
           <div className="flex flex-col gap-4">

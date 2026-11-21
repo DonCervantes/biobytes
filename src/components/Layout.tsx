@@ -6,6 +6,7 @@ import { useAuth } from '@/auth/AuthContext'
 import { db } from '@/lib/cola'
 import { useConexion } from '@/lib/conexion'
 import { cn, ROLES } from '@/lib/utils'
+import { Logo } from './Logo'
 import { PanelDecisiones } from './PanelDecisiones'
 import { Boton } from './ui'
 
@@ -32,10 +33,7 @@ export function Layout() {
     <div className="min-h-dvh">
       <header className="sticky top-0 z-30 border-b border-borde bg-white/95 backdrop-blur">
         <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-x-4 gap-y-2 px-4 py-2">
-          <Link to="/padron" className="flex items-center gap-2">
-            <img src="/favicon.svg" alt="" className="size-8" />
-            <span className="font-titulo text-xl font-extrabold text-primario">BioBytes</span>
-          </Link>
+          <Link to="/padron" aria-label="BioBytes, ir al padrón"><Logo /></Link>
           <nav className="flex gap-1" aria-label="Secciones">
             {rol !== 'auditor' && <NavLink to="/padron" className={enlace}>Padrón</NavLink>}
             {(rol === 'captura' || rol === 'coordinacion') && <NavLink to="/alta" className={enlace}>Registrar</NavLink>}

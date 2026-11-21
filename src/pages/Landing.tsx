@@ -4,6 +4,7 @@ import {
 } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '@/auth/AuthContext'
+import { Logo } from '@/components/Logo'
 import { estiloBoton } from '@/components/ui'
 import { cn } from '@/lib/utils'
 
@@ -50,10 +51,7 @@ export function Landing() {
       {/* 0 · Barra de navegación */}
       <header className="sticky top-0 z-30 border-b border-borde/70 bg-arena/90 backdrop-blur">
         <div className="mx-auto flex max-w-6xl items-center gap-6 px-4 py-3">
-          <a href="#inicio" className="flex items-center gap-2">
-            <img src="/favicon.svg" alt="" className="size-9" />
-            <span className="font-titulo text-xl font-extrabold text-primario">BioBytes</span>
-          </a>
+          <a href="#inicio" aria-label="BioBytes, inicio"><Logo /></a>
           <nav aria-label="Secciones de la página" className="hidden gap-1 md:flex">
             {[['#como-funciona', 'Cómo funciona'], ['#privacidad', 'Privacidad'], ['#para-quien', 'Para quién']].map(([h, t]) => (
               <a key={h} href={h} className="rounded-[10px] px-3 py-2 font-semibold text-tinta hover:bg-niebla">{t}</a>
@@ -235,7 +233,7 @@ export function Landing() {
       <footer className="border-t border-borde bg-white">
         <div className="mx-auto flex max-w-6xl flex-col gap-3 px-4 py-8 text-sm text-gris sm:flex-row sm:items-center sm:justify-between">
           <p className="flex items-center gap-2">
-            <img src="/favicon.svg" alt="" className="size-6" />
+            <img src="/icon.svg" alt="" className="h-6 w-auto" />
             Un proyecto hermano de EIRA Movimiento Rosa A.C.
           </p>
           <p>Aviso de privacidad (en preparación) · Licencia MIT · Hecho en México 🇲🇽</p>
