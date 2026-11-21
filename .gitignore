@@ -34,3 +34,7 @@ dist-ssr
 
 # Archivos temporales de la CLI de Supabase
 supabase/.temp/
+
+# Playwright
+/test-results/
+/playwright-report/

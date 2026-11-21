@@ -66,6 +66,22 @@ Cómo correrlas:
 - **Terminal**: `psql "$SUPABASE_DB_URL" -qAt -f supabase/tests/bb16_base.test.sql`
 - **GitHub Actions**: el flujo `Pruebas de la base` corre en cada push que toque `supabase/` (o a mano desde la pestaña *Actions*). Necesita el secreto del repo `SUPABASE_DB_URL`; sin él, se salta.
 
+## Pruebas de punta a punta (BB-17)
+
+`e2e/recorrido.spec.ts` (Playwright) recorre la app en un navegador real contra el build de producción y el Supabase de `.env.local`:
+
+1. **María regresa**: alta con «Maria» sin acento → 3 candidatas (900101 «Muy probable») → «Sí, es ella» → teléfono anterior tachado y sin una cuarta María en el padrón.
+2. **Sin internet de verdad** (`setOffline`): registrar una visita, comprobar que en IndexedDB solo hay bytes cifrados, **recargar sin red** (la app abre desde el service worker) y, al volver la red, ver que se envía sola con la insignia «Capturada sin conexión».
+3. **Roles**: el personal médico ve antecedentes y no tiene botones de captura; Captura al revés.
+4. **Auditoría**: «Verificar integridad» de la bitácora.
+5. **Cerrar sesión** borra cola, padrón, sedes y la llave de cifrado.
+
+```bash
+npm run test:e2e        # compila y corre las pruebas
+```
+
+Las contraseñas de prueba se leen de `supabase/usuarios-demo.local.txt` o de `E2E_CAPTURA_PASS`, `E2E_MEDICO_PASS` y `E2E_AUDITOR_PASS`. Las pruebas escriben en la base: al terminar, corre `supabase/reinicio-demo.sql`.
+
 ## Valkey (opcional)
 
 La Edge Function `supabase/functions/sync` usa Valkey si encuentra estos secretos (Supabase → Edge Functions → Secrets, o `supabase secrets set`):
