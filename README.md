@@ -82,6 +82,10 @@ npm run test:e2e        # compila y corre las pruebas
 
 Las contraseñas de prueba se leen de `supabase/usuarios-demo.local.txt` o de `E2E_CAPTURA_PASS`, `E2E_MEDICO_PASS` y `E2E_AUDITOR_PASS`. Las pruebas escriben en la base: al terminar, corre `supabase/reinicio-demo.sql`.
 
+## Video de la demo
+
+`npm run demo:grabar` graba la demo de ~1.5 min (guion de la §8) con subtítulos quemados y genera `demo/salida/biobytes-demo.webm` y `demo/salida/biobytes-demo.srt`. Escribe en la base: al terminar, corre `supabase/reinicio-demo.sql`.
+
 ## Valkey (opcional)
 
 La Edge Function `supabase/functions/sync` usa Valkey si encuentra estos secretos (Supabase → Edge Functions → Secrets, o `supabase secrets set`):

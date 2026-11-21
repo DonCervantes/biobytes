@@ -67,7 +67,7 @@ export function Layout() {
             <Boton variante="fantasma" onClick={salir}><LogOut size={16} aria-hidden /> Cerrar sesión</Boton>
           </div>
         </div>
-        {!persistente && pendientes + porDecidir > 0 && (
+        {!persistente && pendientes > 0 && (
           <p role="status" className="border-t border-ambar/30 bg-ambar-claro px-4 py-2 text-center text-sm font-medium text-ambar">
             El navegador podría borrar capturas si se llena; envíalas pronto.
           </p>

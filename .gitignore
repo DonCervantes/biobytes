@@ -38,3 +38,7 @@ supabase/.temp/
 # Playwright
 /test-results/
 /playwright-report/
+
+# Grabaciones de la demo (videos pesados)
+/demo/.grabacion/
+/demo/salida/
