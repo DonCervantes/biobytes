@@ -30,7 +30,7 @@ Producto, roles, pitch y modelo de negocio: [`docs/BioBytes.md`](docs/BioBytes.m
 | Bitácora encadenada con HMAC (secreto en Vault) + página de auditoría con «Verificar integridad» | ✅ Implementado |
 | Idempotencia por `client_id` | ✅ En Postgres (`captura_sync`) |
 | Valkey (idempotencia rápida y límite de intentos) | 🟡 Diseñado (BB-13); la idempotencia ya vive en Postgres |
-| Cifrado AES-GCM de la cola local | 🟡 Diseñado (BB-10). Hoy la cola y el padrón local se **vacían** al cerrar sesión |
+| Cifrado de la cola y del padrón locales (AES-GCM 256, llave no exportable que se borra al cerrar sesión) | ✅ Implementado (BB-10) |
 | Coordinación (fusionar/separar), Admin UI | 🟡 Diseñado; usuarios desde el panel de Supabase |
 | Portal de paciente + SMS | 🔵 Diseñado |
 
@@ -86,8 +86,9 @@ Matriz de roles completa en la §1.2 de `docs/BioBytes.md`. Verificado contra la
 - Captura no ve antecedentes (`abrir_expediente` los devuelve como `null`; `paciente_clinico` le regresa 0 filas).
 - Personal médico recibe **403 «No tienes permiso para registrar.»** al llamar a `registrar_captura`.
 - `anon` no puede ejecutar ninguna función; `log_bitacora` no está expuesta a la API.
+- En el dispositivo, la cola y el padrón descargado se guardan cifrados en IndexedDB (WebCrypto AES-GCM). La llave es un `CryptoKey` no exportable: sobrevive a una recarga para no perder capturas pendientes, pero ningún script puede copiarla. Al cerrar sesión se borran la llave y todos los datos locales.
 
-**Para un piloto real faltan:** análisis jurídico (LFPDPPP, NOM-004), revisión de seguridad independiente, decidir el hospedaje de datos de salud, cifrado de la cola local, capacitación y prueba de restauración de respaldos.
+**Para un piloto real faltan:** análisis jurídico (LFPDPPP, NOM-004), revisión de seguridad independiente, decidir el hospedaje de datos de salud, capacitación y prueba de restauración de respaldos.
 
 ## Licencia
 

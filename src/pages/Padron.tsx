@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '@/auth/AuthContext'
 import { Alerta, Boton, estiloBoton, Folio } from '@/components/ui'
-import { db } from '@/lib/cola'
+import { leerPadron } from '@/lib/cola'
 import { useConexion } from '@/lib/conexion'
 import { buscarLocal } from '@/lib/match'
 import { esErrorDeRed, supabase } from '@/lib/supabase'
@@ -33,7 +33,7 @@ export function Padron() {
   useEffect(() => {
     let vigente = true
     const buscarEnDispositivo = async () => {
-      const todo = buscarLocal(q, await db.padron.toArray())
+      const todo = buscarLocal(q, await leerPadron())
       if (!vigente) return
       setFilas(todo.slice(pagina * POR_PAGINA, (pagina + 1) * POR_PAGINA).map((p) => ({
         id: p.id, folio: p.folio,

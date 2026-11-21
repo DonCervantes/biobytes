@@ -1,8 +1,7 @@
-import { useLiveQuery } from 'dexie-react-hooks'
 import { X } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { toast } from 'sonner'
-import { db, decidir, descartar, reintentar, type Captura } from '@/lib/cola'
+import { db, decidir, descartar, reintentar, useCapturas, type Captura } from '@/lib/cola'
 import type { RespuestaCaptura } from '@/lib/tipos'
 import { CAMPOS } from '@/lib/utils'
 import { Candidatas } from './Candidatas'
@@ -17,8 +16,8 @@ function avisarResultado(r: RespuestaCaptura | undefined | null) {
 
 /** Panel lateral «Por decidir»: capturas que necesitan una decisión humana. */
 export function PanelDecisiones({ abierto, onCerrar }: { abierto: boolean; onCerrar: () => void }) {
-  const capturas = useLiveQuery(
-    () => db.cola.where('estado').anyOf('coincidencias', 'conflicto', 'error').sortBy('creada'), [], [])
+  const capturas = useCapturas(
+    () => db.cola.where('estado').anyOf('coincidencias', 'conflicto', 'error').sortBy('creada'), [])
   const cerrarRef = useRef<HTMLButtonElement>(null)
 
   useEffect(() => {

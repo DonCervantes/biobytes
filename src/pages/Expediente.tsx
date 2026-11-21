@@ -5,7 +5,7 @@ import { Link, useParams } from 'react-router-dom'
 import { toast } from 'sonner'
 import { useAuth } from '@/auth/AuthContext'
 import { Alerta, AreaTexto, Boton, Campo, Entrada, Folio, Insignia, Selector, Tarjeta } from '@/components/ui'
-import { db, descartar, enviarCaptura } from '@/lib/cola'
+import { db, descartar, enviarCaptura, pacienteLocal, useCapturas } from '@/lib/cola'
 import { useConexion } from '@/lib/conexion'
 import { esErrorDeRed, supabase } from '@/lib/supabase'
 import type { CapturaP, Expediente as TExpediente, RespuestaCaptura } from '@/lib/tipos'
@@ -22,13 +22,13 @@ export function Expediente() {
   const [local, setLocal] = useState(false)
   const [error, setError] = useState('')
   const [modo, setModo] = useState<Modo>(null)
-  const pendientes = useLiveQuery(
-    () => db.cola.filter((c) => c.p.paciente_id === id && c.p.tipo !== 'alta').toArray(), [id], [])
+  const pendientes = useCapturas(() => db.cola.where('paciente_id').equals(id).toArray(), [id])
+    .filter((c) => c.p.tipo !== 'alta')
 
   const cargar = useCallback(async () => {
     setError('')
     const desdeDispositivo = async () => {
-      const p = await db.padron.get(id)
+      const p = await pacienteLocal(id)
       if (!p) { setError('Sin internet y este expediente no está guardado en el dispositivo.'); return }
       setExp({
         rol: rol!, antecedentes: null, visitas: [], cambios: [],

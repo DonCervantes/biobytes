@@ -5,7 +5,7 @@ import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import { Candidatas } from '@/components/Candidatas'
 import { Alerta, AreaTexto, Boton, Campo, Entrada, Selector, Tarjeta } from '@/components/ui'
-import { db, decidir, descartar, enviarCaptura } from '@/lib/cola'
+import { db, decidir, descartar, enviarCaptura, existeEnCola, leerPadron } from '@/lib/cola'
 import { estaEnLinea } from '@/lib/conexion'
 import { coincidenciasLocales } from '@/lib/match'
 import type { Candidata, CapturaP, RespuestaCaptura } from '@/lib/tipos'
@@ -77,7 +77,7 @@ export function Alta() {
     try {
       if (!estaEnLinea()) {
         // Sin red: coincidencias preliminares contra el padrón descargado.
-        const locales = coincidenciasLocales(datos, await db.padron.toArray())
+        const locales = coincidenciasLocales(datos, await leerPadron())
         if (locales.length > 0) {
           setCandidatas(locales); setPreliminar(true)
           window.scrollTo({ top: 0, behavior: 'smooth' })
@@ -95,7 +95,7 @@ export function Alta() {
     if (!p) return
     setOcupado(true)
     try {
-      const enCola = await db.cola.get(p.client_id)
+      const enCola = await existeEnCola(p.client_id)
       const r = enCola ? await decidir(p.client_id, cambios) : await enviarCaptura({ ...p, ...cambios })
       await terminar(r, p.client_id)
     } finally {
