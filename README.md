@@ -32,7 +32,7 @@ Producto, roles, pitch y modelo de negocio: [`docs/BioBytes.md`](docs/BioBytes.m
 | Imprimir / guardar como PDF: expediente (carta, pie «CONFIDENCIAL» con folio y página, CURP parcial, lo clínico solo para el rol médico) y comprobante de visita en media carta sin datos clínicos; cada impresión queda en la bitácora | ✅ Implementado (BB-12b) |
 | Contingencia sin conexión: renovación de sesión antes de enviar, aviso si el navegador puede borrar capturas y formato en blanco imprimible en `/formato` | ✅ Implementado (BB-11) |
 | Edge Function `sync`: la cola se envía en lotes de hasta 20 (`VITE_SYNC_MODE=edge`) | ✅ Implementado (BB-13) |
-| Valkey: idempotencia rápida (`idem:*`, 24 h) y límite de 60 capturas por minuto por usuaria (`rl:*`) | 🟡 Código listo; se activa al configurar los secretos `VALKEY_*`. Sin ellos la función trabaja en modo degradado (`valkey: false`) y la idempotencia sigue en Postgres |
+| Valkey (Aiven, plan gratuito): idempotencia rápida (`idem:*`, 24 h) y límite de 60 capturas por minuto por usuaria (`rl:*`) | ✅ Activo en el proyecto de demo. Si Valkey falla, la función trabaja en modo degradado (`valkey: false`) y la idempotencia sigue en Postgres |
 | Cifrado de la cola y del padrón locales (AES-GCM 256, llave no exportable que se borra al cerrar sesión) | ✅ Implementado (BB-10) |
 | Coordinación (fusionar/separar), Admin UI | 🟡 Diseñado; usuarios desde el panel de Supabase |
 | Portal de paciente + SMS | 🔵 Diseñado |
