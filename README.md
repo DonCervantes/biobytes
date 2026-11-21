@@ -43,7 +43,6 @@ Producto, roles, pitch y modelo de negocio: [`docs/BioBytes.md`](docs/BioBytes.m
    - Crea el secreto de la bitácora: `select vault.create_secret(encode(extensions.gen_random_bytes(32),'hex'), 'hmac_secret');`
    - En **Auth → Users** crea `captura@biobytes.demo`, `medico@biobytes.demo` y `auditor@biobytes.demo` (Auto confirm) y corre `supabase/seed.sql`.
    - En **Auth → Providers → Email** desactiva *Allow new users to sign up*.
-   - El secreto de Vault va **antes** de correr las migraciones que escriben en la bitácora.
    - Pruebas: `supabase/pruebas-bb03.sql` (T1–T5). Reinicio para la demo: `supabase/reinicio-demo.sql`.
 2. **Front.**
    ```bash
